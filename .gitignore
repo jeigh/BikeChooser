@@ -1,0 +1,8 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/src/.github
+/src/.vs/BikeChooser.slnx
+/src/BikeEnergyModel/bin/Debug/net10.0
+/src/BikeEnergyModel/obj
