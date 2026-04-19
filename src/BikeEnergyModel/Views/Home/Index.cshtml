@@ -1,0 +1,138 @@
+@model BikeEnergyModel.Models.RideResultsViewModel
+@{
+    ViewData["Title"] = "Bike Energy Calculator";
+}
+
+<h1 class="mb-4">Bike Energy Calculator</h1>
+<p class="text-muted mb-4">
+    Estimates human-supplied energy (kJ) for a round-trip ride across three Trek Domane+ AL5 configurations.
+</p>
+
+<form asp-action="Index" method="post" class="mb-5">
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label asp-for="Input.RideDistanceMiles" class="form-label"></label>
+            <input asp-for="Input.RideDistanceMiles" class="form-control" placeholder="e.g. 30" />
+            <span asp-validation-for="Input.RideDistanceMiles" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.TargetSpeedMph" class="form-label"></label>
+            <input asp-for="Input.TargetSpeedMph" class="form-control" placeholder="e.g. 15" />
+            <span asp-validation-for="Input.TargetSpeedMph" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.RiderWeightLbs" class="form-label"></label>
+            <input asp-for="Input.RiderWeightLbs" class="form-control" placeholder="e.g. 180" />
+            <span asp-validation-for="Input.RiderWeightLbs" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.MotorAssistWatts" class="form-label"></label>
+            <input asp-for="Input.MotorAssistWatts" class="form-control" placeholder="e.g. 100" />
+            <span asp-validation-for="Input.MotorAssistWatts" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.MotorCutoffSpeedMph" class="form-label"></label>
+            <input asp-for="Input.MotorCutoffSpeedMph" class="form-control" />
+            <span asp-validation-for="Input.MotorCutoffSpeedMph" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.ElevationGainFeet" class="form-label"></label>
+            <input asp-for="Input.ElevationGainFeet" class="form-control" placeholder="e.g. 500" />
+            <span asp-validation-for="Input.ElevationGainFeet" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.WindSpeedMph" class="form-label"></label>
+            <input asp-for="Input.WindSpeedMph" class="form-control" placeholder="e.g. 0" />
+            <span asp-validation-for="Input.WindSpeedMph" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Input.WindDirection" class="form-label"></label>
+            <select asp-for="Input.WindDirection" class="form-select">
+                <option value="None">None (calm)</option>
+                <option value="HeadTail">Head / Tailwind</option>
+                <option value="Crosswind">Crosswind</option>
+            </select>
+            <span asp-validation-for="Input.WindDirection" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary px-4">Calculate</button>
+    </div>
+</form>
+
+@if (Model.Results is { Count: > 0 })
+{
+    <h2 class="mb-3">Results</h2>
+    <div class="row g-3">
+        @foreach (var r in Model.Results)
+        {
+            <div class="col-md-4">
+                <div class="card h-100 @(r.IsRecommended ? "border-success border-2" : "")">
+                    <div class="card-header @(r.IsRecommended ? "bg-success text-white" : "")">
+                        @if (r.IsRecommended)
+                        {
+                            <span class="me-1">&#9733; Recommended &mdash;</span>
+                        }
+                        <strong>@r.ConfigName</strong>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm table-borderless mb-0">
+                            <tbody>
+                                <tr>
+                                    <th class="text-muted fw-normal">Human Energy</th>
+                                    <td class="text-end fw-semibold">@r.HumanEnergyKJ.ToString("F1") kJ</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted fw-normal">Motor Duration</th>
+                                    <td class="text-end">
+                                        @if (r.MotorAssistDuration.HasValue)
+                                        {
+                                            @($"{(int)r.MotorAssistDuration.Value.TotalHours}:{r.MotorAssistDuration.Value.Minutes:D2}")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted fw-normal">Battery Remaining</th>
+                                    <td class="text-end">
+                                        @if (r.BatteryRemainingWh.HasValue)
+                                        {
+                                            @($"{r.BatteryRemainingWh.Value:F1} Wh")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted fw-normal">Optimal Motor Setting</th>
+                                    <td class="text-end">
+                                        @if (r.OptimalMotorWatts.HasValue)
+                                        {
+                                            @($"{r.OptimalMotorWatts.Value:F1} W")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}
