@@ -28,7 +28,6 @@ For the e-bike configurations, the motor offsets some of the required power — 
 |-------|-----------------|
 | Ride distance (miles, round trip) | Total distance — longer rides favor the e-bike if the battery lasts |
 | Target speed (mph) | Speed above the motor cutoff means the motor is dead weight |
-| Motor assist (watts) | How much motor power to use (0–250W) |
 | Motor cutoff speed (mph) | Class 1 = 20 mph, Class 3 = 28 mph, or any value for other setups |
 | Wind speed (mph) | Affects aerodynamic drag asymmetrically on round trips |
 | Wind direction | Head/tailwind vs. crosswind vs. no wind |
@@ -37,7 +36,7 @@ For the e-bike configurations, the motor offsets some of the required power — 
 
 ## Output
 
-For each of the three configurations, the app displays the total human-supplied energy in kilojoules, motor assist duration, remaining battery, and the optimal motor setting (the wattage that would spread the full battery evenly across the ride). The lowest-energy option is highlighted.
+For each of the three configurations, the app displays the total human-supplied energy in kilojoules, motor assist duration, remaining battery, and the optimal motor setting — the wattage that spreads the full battery evenly across the ride, which is what the calculator uses internally. The lowest-energy option is highlighted.
 
 ## The Three Configurations
 

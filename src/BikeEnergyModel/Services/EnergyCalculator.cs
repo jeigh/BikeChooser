@@ -33,7 +33,6 @@ public class EnergyCalculator : IEnergyCalculator
         double rideDistM  = input.RideDistanceMiles * MilesToMeters;
         double hMeters    = input.ElevationGainFeet * FeetToMeters;
         double mRiderKg   = input.RiderWeightLbs * LbsToKg;
-        double pMotorW    = input.MotorAssistWatts;
         double rideTimeS  = rideDistM / vGroundMs;
 
         // Build wind segments: (distance_m, v_air_ms)
@@ -43,6 +42,16 @@ public class EnergyCalculator : IEnergyCalculator
 
         foreach (var config in Configs)
         {
+            double? optimalMotorW = null;
+            double pMotorW = 0;
+            if (config.BatteryEnergyJ > 0)
+            {
+                double rideTimeHours = rideTimeS / 3600.0;
+                double batteryWh = config.BatteryEnergyJ / 3600.0;
+                optimalMotorW = Math.Clamp(batteryWh / rideTimeHours, 0, 250);
+                pMotorW = optimalMotorW.Value;
+            }
+
             double mTotal = mRiderKg + config.BikeWeightKg;
             bool motorActive = config.BatteryEnergyJ > 0
                                && pMotorW > 0
@@ -101,16 +110,6 @@ public class EnergyCalculator : IEnergyCalculator
             double batteryUsedClimb = config.BatteryEnergyJ - batteryForFlat;
             double batteryRemainingJ = config.BatteryEnergyJ - batteryUsedFlat - batteryUsedClimb;
             batteryRemainingJ = Math.Max(batteryRemainingJ, 0);
-
-            // --- Step 7: Optimal motor setting ---
-            double? optimalMotorW = null;
-            if (config.BatteryEnergyJ > 0)
-            {
-                double rideTimeHours = rideTimeS / 3600.0;
-                double batteryWh = config.BatteryEnergyJ / 3600.0;
-                double optimal = batteryWh / rideTimeHours;
-                optimalMotorW = Math.Clamp(optimal, 0, 250);
-            }
 
             results.Add(new BikeResult
             {
