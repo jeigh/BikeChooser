@@ -38,11 +38,11 @@ The app is a single-page form (`GET /` → show form, `POST /` → calculate and
 
 `EnergyCalculator` (singleton DI) does all the math:
 
-1. **Wind segments** — `BuildSegments()` splits the ride into one or two legs with different effective airspeed (`v_air`). Aerodynamic power uses `v_air² × v_ground`, not `v_air³`.
+1. **Leg-based model** — the ride is composed of one or more legs, each with its own distance, wind speed, and wind direction (None, Headwind, Tailwind, Crosswind). Total ride distance is the sum of leg distances. `ComputeAirspeed()` maps each leg's wind direction to effective `v_air`. Aerodynamic power uses `v_air² × v_ground`, not `v_air³`.
 2. **Elevation** — net gravity cost `= m × g × h × (1 − η_descent)`. For e-bikes, the motor covers climbing first, reducing the battery available for flat segments.
 3. **Optimal wattage** — `battery_Wh / ride_time_hours`, clamped to [0, 250]. Computed per e-bike config before the energy calculation; used as `P_motor_W` for that config.
-4. **Motor duration** — `battery_remaining_after_climbing / P_motor_W` gives seconds of flat assist. Motor is active only when `target_speed ≤ v_cutoff` and battery has charge. Motor fraction is distributed proportionally across wind segments.
-5. **Human energy** — per segment: `P_human × t_motor_on + P_pedal × t_motor_off`, then sum across segments and add elevation human cost.
+4. **Motor duration** — `battery_remaining_after_climbing / P_motor_W` gives seconds of flat assist. Motor is active only when `target_speed ≤ v_cutoff` and battery has charge. Motor fraction is distributed proportionally across legs.
+5. **Human energy** — per leg: `P_human × t_motor_on + P_pedal × t_motor_off`, then sum across legs and add elevation human cost.
 
 ## Physics Model Reference
 

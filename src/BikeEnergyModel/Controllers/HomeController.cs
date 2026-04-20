@@ -24,7 +24,10 @@ public class HomeController : Controller
     public IActionResult Index(RideResultsViewModel vm)
     {
         if (ModelState.IsValid)
+        {
             vm.Results = _calculator.Calculate(vm.Input);
+            vm.TotalRideDistanceMiles = vm.Input.Legs.Sum(l => l.DistanceMiles);
+        }
         return View(vm);
     }
 

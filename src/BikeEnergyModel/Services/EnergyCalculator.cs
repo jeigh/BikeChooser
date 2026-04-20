@@ -27,21 +27,22 @@ public class EnergyCalculator : IEnergyCalculator
 
     public List<BikeResult> Calculate(RideInputModel input)
     {
-        double vGroundMs  = input.TargetSpeedMph * MphToMs;
-        double vWindMs    = input.WindSpeedMph * MphToMs;
-        double vCutoffMs  = input.MotorCutoffSpeedMph * MphToMs;
-        double rideDistM  = input.RideDistanceMiles * MilesToMeters;
-        double hMeters    = input.ElevationGainFeet * FeetToMeters;
-        double mRiderKg   = input.RiderWeightLbs * LbsToKg;
-        double rideTimeS  = rideDistM / vGroundMs;
+        double vGroundMs = input.TargetSpeedMph * MphToMs;
+        double vCutoffMs = input.MotorCutoffSpeedMph * MphToMs;
+        double hMeters   = input.ElevationGainFeet * FeetToMeters;
+        double mRiderKg  = input.RiderWeightLbs * LbsToKg;
 
-        // Build wind segments: (distance_m, v_air_ms)
-        var segments = BuildSegments(input.WindDirection, rideDistM, vGroundMs, vWindMs);
+        // Compute total ride distance and time from legs
+        double totalDistM = 0;
+        foreach (var leg in input.Legs)
+            totalDistM += leg.DistanceMiles * MilesToMeters;
+        double rideTimeS = totalDistM / vGroundMs;
 
         var results = new List<BikeResult>();
 
         foreach (var config in Configs)
         {
+            // Optimal motor setting
             double? optimalMotorW = null;
             double pMotorW = 0;
             if (config.BatteryEnergyJ > 0)
@@ -57,14 +58,13 @@ public class EnergyCalculator : IEnergyCalculator
                                && pMotorW > 0
                                && vGroundMs <= vCutoffMs;
 
-            // --- Step 3: Elevation cost ---
+            // --- Elevation cost ---
             double eGravityNet = mTotal * G * hMeters * (1.0 - EtaDescent);
             double eGravityHuman = eGravityNet;
             double batteryForFlat = config.BatteryEnergyJ;
 
             if (motorActive)
             {
-                // Motor assists climbing; contribution limited by battery and gravity cost
                 double motorClimbMechanical = Math.Min(config.BatteryEnergyJ * EtaMotor, eGravityNet);
                 double motorClimbElectrical = motorClimbMechanical / EtaMotor;
                 eGravityHuman = eGravityNet - motorClimbMechanical;
@@ -72,7 +72,7 @@ public class EnergyCalculator : IEnergyCalculator
                 batteryForFlat = Math.Max(batteryForFlat, 0);
             }
 
-            // --- Step 4: Motor duration on flat ---
+            // --- Motor duration on flat ---
             double motorDurationS = 0;
             if (motorActive && pMotorW > 0)
             {
@@ -81,13 +81,17 @@ public class EnergyCalculator : IEnergyCalculator
             }
             double fractionMotorOn = (rideTimeS > 0) ? motorDurationS / rideTimeS : 0;
 
-            // --- Steps 2 & 5: Flat human energy across segments ---
+            // --- Flat human energy across legs ---
             double pMotorEffective = pMotorW * EtaMotor;
             double eFlatHuman = 0;
 
-            foreach (var (segDistM, vAirMs) in segments)
+            foreach (var leg in input.Legs)
             {
-                double tSeg = segDistM / vGroundMs;
+                double segDistM = leg.DistanceMiles * MilesToMeters;
+                double vWindMs  = leg.WindSpeedMph * MphToMs;
+                double vAirMs   = ComputeAirspeed(leg.WindDirection, vGroundMs, vWindMs);
+
+                double tSeg     = segDistM / vGroundMs;
                 double pRolling = config.RollingResistance * mTotal * G * vGroundMs;
                 double pAero    = 0.5 * CdA * Rho * vAirMs * vAirMs * vGroundMs;
                 double pPedal   = (pRolling + pAero) / EtaDrivetrain;
@@ -102,7 +106,7 @@ public class EnergyCalculator : IEnergyCalculator
                 eFlatHuman += pHuman * tMotorOn + pPedal * tMotorOff;
             }
 
-            // --- Step 6: Total human energy ---
+            // --- Total human energy ---
             double eTotalHuman = eFlatHuman + eGravityHuman;
 
             // --- Battery remaining ---
@@ -128,17 +132,14 @@ public class EnergyCalculator : IEnergyCalculator
         return results;
     }
 
-    private static List<(double DistM, double VAirMs)> BuildSegments(
-        string windDirection, double rideDistM, double vGroundMs, double vWindMs)
+    private static double ComputeAirspeed(string windDirection, double vGroundMs, double vWindMs)
     {
         return windDirection switch
         {
-            "HeadTail" => [
-                (rideDistM / 2, Math.Max(vGroundMs - vWindMs, 0)),
-                (rideDistM / 2, vGroundMs + vWindMs),
-            ],
-            "Crosswind" => [(rideDistM, Math.Sqrt(vGroundMs * vGroundMs + vWindMs * vWindMs))],
-            _           => [(rideDistM, vGroundMs)],
+            "Headwind"  => vGroundMs + vWindMs,
+            "Tailwind"  => Math.Max(vGroundMs - vWindMs, 0),
+            "Crosswind" => Math.Sqrt(vGroundMs * vGroundMs + vWindMs * vWindMs),
+            _           => vGroundMs, // None
         };
     }
 }
