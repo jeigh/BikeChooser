@@ -28,6 +28,11 @@
             <span asp-validation-for="Input.MotorCutoffSpeedMph" class="text-danger small"></span>
         </div>
         <div class="col-md-4">
+            <label asp-for="Input.MaxMotorAssistWatts" class="form-label"></label>
+            <input asp-for="Input.MaxMotorAssistWatts" class="form-control" />
+            <span asp-validation-for="Input.MaxMotorAssistWatts" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
             <label asp-for="Input.ElevationGainFeet" class="form-label"></label>
             <input asp-for="Input.ElevationGainFeet" class="form-control" placeholder="e.g. 500" />
             <span asp-validation-for="Input.ElevationGainFeet" class="text-danger small"></span>

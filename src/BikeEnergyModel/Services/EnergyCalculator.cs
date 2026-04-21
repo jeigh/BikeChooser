@@ -49,7 +49,7 @@ public class EnergyCalculator : IEnergyCalculator
             {
                 double rideTimeHours = rideTimeS / 3600.0;
                 double batteryWh = config.BatteryEnergyJ / 3600.0;
-                optimalMotorW = Math.Clamp(batteryWh / rideTimeHours, 0, 250);
+                optimalMotorW = Math.Clamp(batteryWh / rideTimeHours, 0, input.MaxMotorAssistWatts);
                 pMotorW = optimalMotorW.Value;
             }
 

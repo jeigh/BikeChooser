@@ -16,6 +16,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UsePathBase("/BikeChooser");
 app.UseRouting();
 
 app.UseAuthorization();

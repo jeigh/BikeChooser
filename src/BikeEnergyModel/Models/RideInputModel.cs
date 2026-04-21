@@ -15,6 +15,11 @@ public class RideInputModel
     public double MotorCutoffSpeedMph { get; set; } = 20;
 
     [Required]
+    [Range(1, 1000, ErrorMessage = "Max motor assist must be between 1 and 1000 W.")]
+    [Display(Name = "Max Motor Assist (watts)")]
+    public double MaxMotorAssistWatts { get; set; } = 250;
+
+    [Required]
     [Range(0, double.MaxValue, ErrorMessage = "Elevation gain must be 0 or greater.")]
     [Display(Name = "Total Elevation Gain (feet)")]
     public double ElevationGainFeet { get; set; }
