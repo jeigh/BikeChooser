@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.HttpOverrides;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -5,7 +7,20 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<BikeEnergyModel.Services.IEnergyCalculator,
                               BikeEnergyModel.Services.EnergyCalculator>();
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto |
+        ForwardedHeaders.XForwardedHost;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 var app = builder.Build();
+
+app.UseForwardedHeaders();
+app.UsePathBase("/BikeChooser");
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -15,8 +30,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
-app.UsePathBase("/BikeChooser");
+//app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthorization();

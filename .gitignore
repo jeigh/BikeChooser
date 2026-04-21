@@ -13,3 +13,4 @@
 /publish
 /src/BikeEnergyModel/bin/Release/net10.0/linux-x64
 /deploy.ps1
+/.claude/settings.local.json
