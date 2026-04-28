@@ -30,4 +30,11 @@ public class RideInputModel
     public double RiderWeightLbs { get; set; }
 
     public List<RideLeg> Legs { get; set; } = [new()];
+
+    public List<BikeInput> Bikes { get; set; } =
+    [
+        new() { Name = "Racing Bike",        WeightLbs = 20.0, RollingResistance = 0.005, BatteryCapacityWh = 0   },
+        new() { Name = "E-Bike",             WeightLbs = 30.0, RollingResistance = 0.007, BatteryCapacityWh = 250 },
+        new() { Name = "E-Bike + Extender",  WeightLbs = 39.0, RollingResistance = 0.007, BatteryCapacityWh = 500 },
+    ];
 }

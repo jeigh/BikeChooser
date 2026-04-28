@@ -25,12 +25,12 @@ src/
   BikeChooser.slnx              # solution file
   BikeEnergyModel/
     Controllers/HomeController.cs
-    Models/          # RideInputModel, BikeConfig, BikeResult, RideResultsViewModel
+    Models/          # RideInputModel, RideLeg, BikeInput, BikeResult, RideResultsViewModel
     Services/        # IEnergyCalculator, EnergyCalculator
     Views/Home/Index.cshtml
 ```
 
-Physics constants (bike weights, Crr, CdA, ρ, η values) all live in `EnergyCalculator.cs`. The three bike configs are constructed there as a static array — they are not configurable at runtime.
+Bike configs are user-editable at runtime via a repeating section in the form (≥ 2 bikes required). `RideInputModel.Bikes` defaults to three presets (Racing Bike, E-Bike, E-Bike + Extender) but the user can add, remove, or modify any of them. Aerodynamic and environmental constants (CdA, ρ, η values) still live as `const` in `EnergyCalculator.cs`. The Crr dropdown options (Track / Tubular through Fat Bike, 0.003–0.015) are exposed as `BikeInput.CrrOptions` so the view can render them.
 
 ## Architecture
 
@@ -40,7 +40,7 @@ The app is a single-page form (`GET /` → show form, `POST /` → calculate and
 
 1. **Leg-based model** — the ride is composed of one or more legs, each with its own distance, wind speed, and wind direction (None, Headwind, Tailwind, Crosswind). Total ride distance is the sum of leg distances. `ComputeAirspeed()` maps each leg's wind direction to effective `v_air`. Aerodynamic power uses `v_air² × v_ground`, not `v_air³`.
 2. **Elevation** — net gravity cost `= m × g × h × (1 − η_descent)`. For e-bikes, the motor covers climbing first, reducing the battery available for flat segments.
-3. **Optimal wattage** — `battery_Wh / ride_time_hours`, clamped to [0, 250]. Computed per e-bike config before the energy calculation; used as `P_motor_W` for that config.
+3. **Optimal wattage** — `battery_Wh / ride_time_hours`, clamped to [0, `Input.MaxMotorAssistWatts`]. Computed per e-bike config before the energy calculation; used as `P_motor_W` for that config.
 4. **Motor duration** — `battery_remaining_after_climbing / P_motor_W` gives seconds of flat assist. Motor is active only when `target_speed ≤ v_cutoff` and battery has charge. Motor fraction is distributed proportionally across legs.
 5. **Human energy** — per leg: `P_human × t_motor_on + P_pedal × t_motor_off`, then sum across legs and add elevation human cost.
 

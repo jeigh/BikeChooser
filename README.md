@@ -2,7 +2,7 @@
 
 A web app that answers a simple question: **for a given ride, which bike should I take?**
 
-It compares three configurations — a lightweight racing bike, an e-bike, and the same e-bike with an extra battery — and tells you which one requires the least human effort, measured in kilojoules.
+It compares any number of bike configurations (minimum two) — out of the box, a lightweight racing bike, an e-bike, and the same e-bike with an extra battery — and tells you which one requires the least human effort, measured in kilojoules. You can edit the defaults, add new bikes, or remove any of them.
 
 ## The Problem
 
@@ -24,29 +24,42 @@ For the e-bike configurations, the motor offsets some of the required power — 
 
 ## Inputs
 
+### Ride parameters
+
 | Input | What it controls |
 |-------|-----------------|
-| Ride distance (miles, round trip) | Total distance — longer rides favor the e-bike if the battery lasts |
 | Target speed (mph) | Speed above the motor cutoff means the motor is dead weight |
 | Motor cutoff speed (mph) | Class 1 = 20 mph, Class 3 = 28 mph, or any value for other setups |
-| Wind speed (mph) | Affects aerodynamic drag asymmetrically on round trips |
-| Wind direction | Head/tailwind vs. crosswind vs. no wind |
-| Elevation gain (feet) | Total climbing — penalizes heavier bikes |
+| Max motor assist (watts) | Caps the optimal-wattage solver |
+| Total elevation gain (feet) | Total climbing — penalizes heavier bikes |
 | Rider weight (lbs) | Combined with bike weight for all force calculations |
+
+### Ride legs (≥ 1, repeatable)
+
+Each leg has its own distance, wind speed, and wind direction (None, Headwind, Tailwind, Crosswind). Total ride distance is the sum of leg distances.
+
+### Bikes (≥ 2, repeatable)
+
+| Input | What it controls |
+|-------|-----------------|
+| Name | Free-text label shown in the results table |
+| Weight (lbs) | Combined with rider weight for rolling and elevation costs |
+| Coefficient of Rolling Resistance | Dropdown of tire/bike-type presets, 0.003 (Track / Tubular) through 0.015 (Fat Bike) in 0.001 steps |
+| Battery capacity (Wh) | 0 = no motor; > 0 = electric, used for motor-assist calculations |
 
 ## Output
 
-For each of the three configurations, the app displays the total human-supplied energy in kilojoules, motor assist duration, remaining battery, and the optimal motor setting — the wattage that spreads the full battery evenly across the ride, which is what the calculator uses internally. The lowest-energy option is highlighted.
+For each configured bike, a single results table shows the total human-supplied energy in kilojoules, motor assist duration, remaining battery, and the optimal motor setting — the wattage that spreads the full battery evenly across the ride, which is what the calculator uses internally. The lowest-energy row is highlighted.
 
-## The Three Configurations
+## Default Bike Configurations
 
-| Config | Weight | Tires | Motor | Battery |
-|--------|--------|-------|-------|---------|
-| Racing Bike | 20 lbs | Road, 100 PSI | None | None |
-| E-Bike | 30 lbs | Gravel, 50 PSI | 250W hub | 250 Wh |
-| E-Bike + Extender | 39 lbs | Gravel, 50 PSI | 250W hub | 500 Wh |
+| Config | Weight | Crr (label → value) | Battery |
+|--------|--------|--------------------|---------|
+| Racing Bike | 20 lbs | Road Bike → 0.005 | 0 Wh |
+| E-Bike | 30 lbs | Gravel Bike → 0.007 | 250 Wh |
+| E-Bike + Extender | 39 lbs | Gravel Bike → 0.007 | 500 Wh |
 
-The e-bike is a Trek Domane+ AL5 with the HyDrive system and an optional 250 Wh range extender battery.
+The e-bike defaults are modeled on a Trek Domane+ AL5 with the HyDrive system and an optional 250 Wh range extender battery. All three are starting points — edit, remove, or add bikes as needed.
 
 ## Tech Stack
 

@@ -17,13 +17,7 @@ public class EnergyCalculator : IEnergyCalculator
     private const double MphToMs = 0.44704;
     private const double LbsToKg = 0.453592;
     private const double FeetToMeters = 0.3048;
-
-    private static readonly BikeConfig[] Configs =
-    [
-        new("Racing Bike",      9.07,  0.005,       0.0, 0.0),
-        new("E-Bike",          13.61,  0.007,  900_000.0, 250.0),
-        new("E-Bike + Extender", 17.69, 0.007, 1_800_000.0, 250.0),
-    ];
+    private const double WhToJ = 3600.0;
 
     public List<BikeResult> Calculate(RideInputModel input)
     {
@@ -40,35 +34,38 @@ public class EnergyCalculator : IEnergyCalculator
 
         var results = new List<BikeResult>();
 
-        foreach (var config in Configs)
+        foreach (var bike in input.Bikes)
         {
+            double bikeWeightKg = bike.WeightLbs * LbsToKg;
+            double batteryEnergyJ = bike.BatteryCapacityWh * WhToJ;
+
             // Optimal motor setting
             double? optimalMotorW = null;
             double pMotorW = 0;
-            if (config.BatteryEnergyJ > 0)
+            if (batteryEnergyJ > 0)
             {
                 double rideTimeHours = rideTimeS / 3600.0;
-                double batteryWh = config.BatteryEnergyJ / 3600.0;
+                double batteryWh = bike.BatteryCapacityWh;
                 optimalMotorW = Math.Clamp(batteryWh / rideTimeHours, 0, input.MaxMotorAssistWatts);
                 pMotorW = optimalMotorW.Value;
             }
 
-            double mTotal = mRiderKg + config.BikeWeightKg;
-            bool motorActive = config.BatteryEnergyJ > 0
+            double mTotal = mRiderKg + bikeWeightKg;
+            bool motorActive = batteryEnergyJ > 0
                                && pMotorW > 0
                                && vGroundMs <= vCutoffMs;
 
             // --- Elevation cost ---
             double eGravityNet = mTotal * G * hMeters * (1.0 - EtaDescent);
             double eGravityHuman = eGravityNet;
-            double batteryForFlat = config.BatteryEnergyJ;
+            double batteryForFlat = batteryEnergyJ;
 
             if (motorActive)
             {
-                double motorClimbMechanical = Math.Min(config.BatteryEnergyJ * EtaMotor, eGravityNet);
+                double motorClimbMechanical = Math.Min(batteryEnergyJ * EtaMotor, eGravityNet);
                 double motorClimbElectrical = motorClimbMechanical / EtaMotor;
                 eGravityHuman = eGravityNet - motorClimbMechanical;
-                batteryForFlat = config.BatteryEnergyJ - motorClimbElectrical;
+                batteryForFlat = batteryEnergyJ - motorClimbElectrical;
                 batteryForFlat = Math.Max(batteryForFlat, 0);
             }
 
@@ -92,7 +89,7 @@ public class EnergyCalculator : IEnergyCalculator
                 double vAirMs   = ComputeAirspeed(leg.WindDirection, vGroundMs, vWindMs);
 
                 double tSeg     = segDistM / vGroundMs;
-                double pRolling = config.RollingResistance * mTotal * G * vGroundMs;
+                double pRolling = bike.RollingResistance * mTotal * G * vGroundMs;
                 double pAero    = 0.5 * CdA * Rho * vAirMs * vAirMs * vGroundMs;
                 double pPedal   = (pRolling + pAero) / EtaDrivetrain;
 
@@ -111,23 +108,26 @@ public class EnergyCalculator : IEnergyCalculator
 
             // --- Battery remaining ---
             double batteryUsedFlat = pMotorW * motorDurationS;
-            double batteryUsedClimb = config.BatteryEnergyJ - batteryForFlat;
-            double batteryRemainingJ = config.BatteryEnergyJ - batteryUsedFlat - batteryUsedClimb;
+            double batteryUsedClimb = batteryEnergyJ - batteryForFlat;
+            double batteryRemainingJ = batteryEnergyJ - batteryUsedFlat - batteryUsedClimb;
             batteryRemainingJ = Math.Max(batteryRemainingJ, 0);
 
             results.Add(new BikeResult
             {
-                ConfigName          = config.Name,
+                ConfigName          = bike.Name,
                 HumanEnergyKJ       = eTotalHuman / 1000.0,
                 MotorAssistDuration = motorActive ? TimeSpan.FromSeconds(motorDurationS) : null,
-                BatteryRemainingWh  = config.BatteryEnergyJ > 0 ? batteryRemainingJ / 3600.0 : null,
+                BatteryRemainingWh  = batteryEnergyJ > 0 ? batteryRemainingJ / 3600.0 : null,
                 OptimalMotorWatts   = optimalMotorW,
             });
         }
 
-        double minEnergy = results.Min(r => r.HumanEnergyKJ);
-        foreach (var r in results)
-            r.IsRecommended = r.HumanEnergyKJ == minEnergy;
+        if (results.Count > 0)
+        {
+            double minEnergy = results.Min(r => r.HumanEnergyKJ);
+            foreach (var r in results)
+                r.IsRecommended = r.HumanEnergyKJ == minEnergy;
+        }
 
         return results;
     }
