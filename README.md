@@ -17,8 +17,8 @@ The model computes the total mechanical power needed to maintain a target speed,
 The power equation accounts for three forces:
 
 - **Rolling resistance** — proportional to total weight and tire type. The racing bike's skinny road tires at 100 PSI roll easier than the e-bike's gravel tires at 50 PSI, but the e-bike is also 10–19 lbs heavier.
-- **Aerodynamic drag** — proportional to the cube of airspeed. Wind direction matters: a headwind/tailwind round trip always costs more total energy than calm air (the headwind penalty outweighs the tailwind savings due to the cubic relationship). Crosswinds are modeled separately.
-- **Elevation** — heavier bikes pay more to climb. On a round trip the net elevation is zero, but total climbing still costs energy because descending doesn't perfectly recover what climbing spent.
+- **Aerodynamic drag** — proportional to the square of airspeed times ground speed. Wind direction matters: a headwind/tailwind round trip always costs more total energy than calm air (the headwind penalty outweighs the tailwind savings). Six per-leg directions are supported — None, Headwind, Diagonal Headwind (front-quartering), Crosswind, Diagonal Tailwind (rear-quartering), Tailwind — stored bike-relative and decomposed into parallel + perpendicular components.
+- **Elevation** — heavier bikes pay more to climb. Each leg has a signed elevation gain (positive = climb, negative = descent). The model charges the full `m·g·h` for climbing and recovers `η_descent · m·g·h` on descent, so balanced round trips cost only `m·g·h·(1 − η_descent)` while one-way uphill rides correctly pay the full climb.
 
 For the e-bike configurations, the motor offsets some of the required power — but only when ground speed is at or below the motor cutoff threshold and the battery still has charge. Once the battery is depleted, the e-bike becomes a heavy bike with high-friction tires and no motor. The app computes exactly when that crossover happens.
 
@@ -31,12 +31,11 @@ For the e-bike configurations, the motor offsets some of the required power — 
 | Target speed (mph) | Speed above the motor cutoff means the motor is dead weight |
 | Motor cutoff speed (mph) | Class 1 = 20 mph, Class 3 = 28 mph, or any value for other setups |
 | Max motor assist (watts) | Caps the optimal-wattage solver |
-| Total elevation gain (feet) | Total climbing — penalizes heavier bikes |
 | Rider weight (lbs) | Combined with bike weight for all force calculations |
 
 ### Ride legs (≥ 1, repeatable)
 
-Each leg has its own distance, wind speed, and wind direction (None, Headwind, Tailwind, Crosswind). Total ride distance is the sum of leg distances.
+Each leg has its own distance, wind speed, wind direction (None / Headwind / Diagonal Headwind / Crosswind / Diagonal Tailwind / Tailwind), and signed elevation gain in feet (positive = climb, negative = descent). Total ride distance is the sum of leg distances.
 
 ### Bikes (≥ 2, repeatable)
 

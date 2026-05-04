@@ -23,13 +23,19 @@ public class EnergyCalculator : IEnergyCalculator
     {
         double vGroundMs = input.TargetSpeedMph * MphToMs;
         double vCutoffMs = input.MotorCutoffSpeedMph * MphToMs;
-        double hMeters   = input.ElevationGainFeet * FeetToMeters;
         double mRiderKg  = input.RiderWeightLbs * LbsToKg;
 
-        // Compute total ride distance and time from legs
+        // Compute total ride distance/time and climb/descent totals from legs
         double totalDistM = 0;
+        double climbM = 0;
+        double descentM = 0;
         foreach (var leg in input.Legs)
+        {
             totalDistM += leg.DistanceMiles * MilesToMeters;
+            double hM = leg.ElevationGainFeet * FeetToMeters;
+            if (hM > 0) climbM += hM;
+            else        descentM += -hM;
+        }
         double rideTimeS = totalDistM / vGroundMs;
 
         var results = new List<BikeResult>();
@@ -56,7 +62,12 @@ public class EnergyCalculator : IEnergyCalculator
                                && vGroundMs <= vCutoffMs;
 
             // --- Elevation cost ---
-            double eGravityNet = mTotal * G * hMeters * (1.0 - EtaDescent);
+            // Generalized for asymmetric routes: full mgh on climbs,
+            // η_descent recovery on descents. Clamped at 0 so a wildly
+            // net-downhill ride doesn't generate negative human cost.
+            double eGravityNet = Math.Max(
+                mTotal * G * (climbM - EtaDescent * descentM),
+                0);
             double eGravityHuman = eGravityNet;
             double batteryForFlat = batteryEnergyJ;
 
@@ -134,12 +145,25 @@ public class EnergyCalculator : IEnergyCalculator
 
     private static double ComputeAirspeed(string windDirection, double vGroundMs, double vWindMs)
     {
-        return windDirection switch
+        // Bike-relative angle: 0° = headwind, 180° = tailwind. Diagonal options
+        // collapse left/right because aero drag depends only on magnitude.
+        double angleDeg = windDirection switch
         {
-            "Headwind"  => vGroundMs + vWindMs,
-            "Tailwind"  => Math.Max(vGroundMs - vWindMs, 0),
-            "Crosswind" => Math.Sqrt(vGroundMs * vGroundMs + vWindMs * vWindMs),
-            _           => vGroundMs, // None
+            "Headwind"          => 0,
+            "DiagonalHeadwind"  => 45,
+            "Crosswind"         => 90,
+            "DiagonalTailwind"  => 135,
+            "Tailwind"          => 180,
+            _                   => double.NaN, // None
         };
+
+        if (double.IsNaN(angleDeg)) return vGroundMs;
+
+        double angleRad = angleDeg * Math.PI / 180.0;
+        double vParallel  = vWindMs * Math.Cos(angleRad); // + = headwind component
+        double vPerp      = vWindMs * Math.Sin(angleRad); // sign irrelevant; squared
+        double vEffective = vGroundMs + vParallel;
+        if (vEffective < 0) vEffective = 0;               // preserve tailwind-faster-than-bike clamp
+        return Math.Sqrt(vEffective * vEffective + vPerp * vPerp);
     }
 }

@@ -17,4 +17,9 @@ public class RideLeg
     [Required]
     [Display(Name = "Wind Direction")]
     public string WindDirection { get; set; } = "None";
+
+    [Required]
+    [Range(-30000, 30000, ErrorMessage = "Elevation gain must be between -30000 and 30000 feet.")]
+    [Display(Name = "Elevation Gain (ft)")]
+    public double ElevationGainFeet { get; set; }
 }

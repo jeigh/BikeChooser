@@ -33,11 +33,6 @@
             <input asp-for="Input.MaxMotorAssistWatts" class="form-control" />
             <span asp-validation-for="Input.MaxMotorAssistWatts" class="text-danger small"></span>
         </div>
-        <div class="col-md-4">
-            <label asp-for="Input.ElevationGainFeet" class="form-label"></label>
-            <input asp-for="Input.ElevationGainFeet" class="form-control" placeholder="e.g. 500" />
-            <span asp-validation-for="Input.ElevationGainFeet" class="text-danger small"></span>
-        </div>
     </div>
 
     <h5 class="mb-3">Bikes</h5>
@@ -75,12 +70,13 @@
     <button type="button" id="add-bike" class="btn btn-outline-secondary btn-sm mb-4">+ Add Bike</button>
 
     <h5 class="mb-3">Ride Legs</h5>
-    <table class="table table-sm table-bordered align-middle mb-2" style="max-width: 600px;">
+    <table class="table table-sm table-bordered align-middle mb-2" style="max-width: 750px;">
         <thead class="table-light">
             <tr>
                 <th>Distance (mi)</th>
                 <th>Wind (mph)</th>
                 <th>Direction</th>
+                <th>Elevation (ft)</th>
                 <th style="width:1%"></th>
             </tr>
         </thead>
@@ -94,10 +90,13 @@
                         <select name="Input.Legs[@i].WindDirection" class="form-select form-select-sm">
                             <option value="None" selected="@(Model.Input.Legs[i].WindDirection == "None")">None</option>
                             <option value="Headwind" selected="@(Model.Input.Legs[i].WindDirection == "Headwind")">Headwind</option>
-                            <option value="Tailwind" selected="@(Model.Input.Legs[i].WindDirection == "Tailwind")">Tailwind</option>
+                            <option value="DiagonalHeadwind" selected="@(Model.Input.Legs[i].WindDirection == "DiagonalHeadwind")">Diagonal Headwind</option>
                             <option value="Crosswind" selected="@(Model.Input.Legs[i].WindDirection == "Crosswind")">Crosswind</option>
+                            <option value="DiagonalTailwind" selected="@(Model.Input.Legs[i].WindDirection == "DiagonalTailwind")">Diagonal Tailwind</option>
+                            <option value="Tailwind" selected="@(Model.Input.Legs[i].WindDirection == "Tailwind")">Tailwind</option>
                         </select>
                     </td>
+                    <td><input name="Input.Legs[@i].ElevationGainFeet" class="form-control form-control-sm" value="@Model.Input.Legs[i].ElevationGainFeet" placeholder="0" /></td>
                     <td><button type="button" class="btn btn-outline-danger btn-sm remove-leg">&times;</button></td>
                 </tr>
             }
@@ -240,9 +239,14 @@
                 <td><input name="Input.Legs[${index}].DistanceMiles" class="form-control form-control-sm" placeholder="15" /></td>
                 <td><input name="Input.Legs[${index}].WindSpeedMph" class="form-control form-control-sm" placeholder="10" /></td>
                 <td><select name="Input.Legs[${index}].WindDirection" class="form-select form-select-sm">
-                    <option value="None">None</option><option value="Headwind">Headwind</option>
-                    <option value="Tailwind">Tailwind</option><option value="Crosswind">Crosswind</option>
+                    <option value="None">None</option>
+                    <option value="Headwind">Headwind</option>
+                    <option value="DiagonalHeadwind">Diagonal Headwind</option>
+                    <option value="Crosswind">Crosswind</option>
+                    <option value="DiagonalTailwind">Diagonal Tailwind</option>
+                    <option value="Tailwind">Tailwind</option>
                 </select></td>
+                <td><input name="Input.Legs[${index}].ElevationGainFeet" class="form-control form-control-sm" placeholder="0" /></td>
                 <td><button type="button" class="btn btn-outline-danger btn-sm remove-leg">&times;</button></td>
             </tr>`;
             container.insertAdjacentHTML('beforeend', html);

@@ -7,7 +7,7 @@ public class RideInputModel
     [Required]
     [Range(0.001, double.MaxValue, ErrorMessage = "Target speed must be greater than 0.")]
     [Display(Name = "Target Speed (mph)")]
-    public double TargetSpeedMph { get; set; }
+    public double TargetSpeedMph { get; set; } = 20;
 
 [Required]
     [Range(0.001, double.MaxValue, ErrorMessage = "Motor cutoff speed must be greater than 0.")]
@@ -20,14 +20,9 @@ public class RideInputModel
     public double MaxMotorAssistWatts { get; set; } = 250;
 
     [Required]
-    [Range(0, double.MaxValue, ErrorMessage = "Elevation gain must be 0 or greater.")]
-    [Display(Name = "Total Elevation Gain (feet)")]
-    public double ElevationGainFeet { get; set; }
-
-    [Required]
     [Range(0.001, double.MaxValue, ErrorMessage = "Rider weight must be greater than 0.")]
     [Display(Name = "Rider Weight (lbs)")]
-    public double RiderWeightLbs { get; set; }
+    public double RiderWeightLbs { get; set; } = 200;
 
     public List<RideLeg> Legs { get; set; } = [new()];
 
